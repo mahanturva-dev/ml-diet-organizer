@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}Diet & Health Planner — Diet Organizer{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Diet & Health Planner</h1>
+    <p>Enter your body measurements, lifestyle habits, and health preferences to compute your personalized nutritional targets.</p>
+</div>
+
+<form method="post" action="{% url 'planner' %}" class="profile-form">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+        <div class="alert-error">
+            {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="{{ form.age.id_for_label }}">{{ form.age.label }}</label>
+            {{ form.age }}
+            {% if form.age.errors %}
+                {% for error in form.age.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.height_cm.id_for_label }}">{{ form.height_cm.label }}</label>
+            {{ form.height_cm }}
+            {% if form.height_cm.errors %}
+                {% for error in form.height_cm.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.weight_kg.id_for_label }}">{{ form.weight_kg.label }}</label>
+            {{ form.weight_kg }}
+            {% if form.weight_kg.errors %}
+                {% for error in form.weight_kg.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.target_weight_kg.id_for_label }}">{{ form.target_weight_kg.label }}</label>
+            {{ form.target_weight_kg }}
+            {% if form.target_weight_kg.errors %}
+                {% for error in form.target_weight_kg.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.activity_level.id_for_label }}">{{ form.activity_level.label }}</label>
+            {{ form.activity_level }}
+            {% if form.activity_level.errors %}
+                {% for error in form.activity_level.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.fitness_goal.id_for_label }}">{{ form.fitness_goal.label }}</label>
+            {{ form.fitness_goal }}
+            {% if form.fitness_goal.errors %}
+                {% for error in form.fitness_goal.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.dietary_preference.id_for_label }}">{{ form.dietary_preference.label }}</label>
+            {{ form.dietary_preference }}
+            {% if form.dietary_preference.errors %}
+                {% for error in form.dietary_preference.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.health_condition.id_for_label }}">{{ form.health_condition.label }}</label>
+            {{ form.health_condition }}
+            {% if form.health_condition.errors %}
+                {% for error in form.health_condition.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.fasting_protocol.id_for_label }}">{{ form.fasting_protocol.label }}</label>
+            {{ form.fasting_protocol }}
+            {% if form.fasting_protocol.errors %}
+                {% for error in form.fasting_protocol.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.85rem; margin-bottom: 1.25rem;">
+        <label style="font-weight: 600; display: block; margin-bottom: 0.35rem; font-size: 0.88rem;">Food Sensitivities & Allergies</label>
+        <div style="display: flex; gap: 1.25rem; flex-wrap: wrap;">
+            {% for choice in form.allergy_options %}
+                <label style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.9rem; cursor: pointer;">
+                    {{ choice.tag }} {{ choice.choice_label }}
+                </label>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem;">
+        {{ form.use_indian_bmi }}
+        <label for="{{ form.use_indian_bmi.id_for_label }}" style="font-weight: 600; cursor: pointer; font-size: 0.9rem;">
+            Use Indian ICMR standards for BMI classification (Overweight &ge; 23, Obese &ge; 25)
+        </label>
+    </div>
+
+    <div class="actions">
+        <button type="submit" class="btn btn-primary">Calculate Plan &rsaquo;</button>
+    </div>
+</form>
+{% endblock %}

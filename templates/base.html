@@ -1,0 +1,77 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Diet Organizer{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        (function() {
+            var savedTheme = localStorage.getItem('diet_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{% url 'home' %}" class="nav-brand">Diet Organizer</a>
+            <ul class="nav-links">
+                <li><a href="{% url 'home' %}">Home</a></li>
+                <li><a href="{% url 'planner' %}">Planner</a></li>
+                <li><a href="{% url 'food_tracker' %}">Food Tracker</a></li>
+                {% if current_profile %}
+                    <li><a href="{% url 'result' current_profile.pk %}">Results</a></li>
+                {% endif %}
+                <li>
+                    <button type="button" class="theme-toggle-btn" id="themeToggle" title="Toggle Light/Dark Theme">
+                        Dark
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }}">
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>&copy; {% now "Y" %} ML-Based Diet Organizer. Academic and educational demonstration.</p>
+    </footer>
+
+    <script src="{% static 'js/food_tracker.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var btn = document.getElementById('themeToggle');
+            if (btn) {
+                var currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+                btn.textContent = currentTheme === 'dark' ? 'Light' : 'Dark';
+
+                btn.addEventListener('click', function() {
+                    var current = document.documentElement.getAttribute('data-theme') || 'light';
+                    var next = current === 'dark' ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', next);
+                    localStorage.setItem('diet_theme', next);
+                    btn.textContent = next === 'dark' ? 'Light' : 'Dark';
+                });
+            }
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

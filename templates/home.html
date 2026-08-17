@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Diet Organizer — Nutrition & Health Planner{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <h1>ML-Based Diet Organizer</h1>
+    <p class="subtitle">
+        A thoughtful nutrition planner for calculating metabolic needs, generating balanced daily meal plans, and tracking food intake with tailored Indian and global dietary guidelines.
+    </p>
+    <div class="actions" style="justify-content: center;">
+        <a href="{% url 'planner' %}" class="btn btn-primary">
+            Start Diet Planner &rsaquo;
+        </a>
+        <a href="{% url 'food_tracker' %}" class="btn btn-outline">
+            Open Food Tracker
+        </a>
+    </div>
+</section>
+
+<section class="features">
+    <div class="card-grid">
+        <div class="card card-highlight">
+            <h3>Indian ICMR & Global Standards</h3>
+            <p>Calculate Body Mass Index (BMI) using standard WHO or Indian ICMR guidelines tailored for South Asian body composition.</p>
+        </div>
+
+        <div class="card">
+            <h3>Daily Calorie & Macro Target</h3>
+            <p>Estimate daily calorie and macronutrient requirements using the Mifflin-St Jeor formula and activity level.</p>
+        </div>
+
+        <div class="card">
+            <h3>AI Food Recommendations</h3>
+            <p>K-Nearest Neighbors model analyzes remaining daily deficits and recommends compatible foods with balanced macros.</p>
+        </div>
+
+        <div class="card card-accent">
+            <h3>Fasting & Vrat Support</h3>
+            <p>Includes Intermittent Fasting schedules and dedicated fasting day (Upvas/Vrat) food recommendations.</p>
+        </div>
+    </div>
+</section>
+
+<section class="disclaimer">
+    <p>
+        <strong>Disclaimer:</strong> This application provides general estimates for educational and planning purposes only. Values are not clinical medical prescriptions.
+    </p>
+</section>
+{% endblock %}

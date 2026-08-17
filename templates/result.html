@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}Your Results — Diet Organizer{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+            <h1>Your Nutritional Profile</h1>
+            <p>Calculated estimates based on your inputs.</p>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="window.print()">
+            Print Report
+        </button>
+    </div>
+</div>
+
+<div class="card-grid">
+    <div class="card card-highlight">
+        <h3>Body Mass Index (BMI)</h3>
+        <div class="metric-value">{{ profile.bmi }}</div>
+        <div class="metric-label">{{ profile.bmi_category }}</div>
+        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.4rem;">
+            {% if profile.use_indian_bmi %}Indian ICMR standard{% else %}Global WHO standard{% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Basal Metabolic Rate</h3>
+        <div class="metric-value">{{ profile.bmr }} <span class="unit">kcal</span></div>
+        <div class="metric-label">Resting burn (Mifflin-St Jeor)</div>
+    </div>
+
+    <div class="card">
+        <h3>Daily Energy (TDEE)</h3>
+        <div class="metric-value">{{ profile.daily_calories }} <span class="unit">kcal</span></div>
+        <div class="metric-label">Maintenance with activity</div>
+    </div>
+
+    <div class="card card-accent">
+        <h3>Calorie Target</h3>
+        <div class="metric-value" style="color: var(--primary);">{{ profile.calorie_target }} <span class="unit">kcal</span></div>
+        <div class="metric-label">Goal: {{ profile.get_fitness_goal_display }}</div>
+    </div>
+</div>
+
+{% if weeks_to_goal %}
+<section class="card" style="margin-bottom: 1.75rem;">
+    <h3 style="color: var(--primary); margin-bottom: 0.4rem;">Goal Timeline Projection</h3>
+    <p style="font-size: 0.95rem; margin-bottom: 0.75rem;">
+        Target weight: <strong>{{ profile.target_weight_kg }} kg</strong> &bull; Current weight: <strong>{{ profile.weight_kg }} kg</strong>
+    </p>
+    <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+        <div>
+            <span style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase;">Estimated Timeframe</span>
+            <div style="font-size: 1.25rem; font-weight: 700;">~{{ weeks_to_goal }} Weeks</div>
+        </div>
+        <div>
+            <span style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase;">Projected Date</span>
+            <div style="font-size: 1.25rem; font-weight: 700; color: var(--primary);">{{ projected_date|date:"F j, Y" }}</div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<section class="profile-summary">
+    <h2 style="font-size: 1.1rem; margin-bottom: 0.75rem; color: var(--text);">Profile Summary</h2>
+    <table class="summary-table">
+        <tbody>
+            <tr>
+                <td>Measurements</td>
+                <td>{{ profile.age }} yrs, {{ profile.height_cm }} cm, {{ profile.weight_kg }} kg</td>
+            </tr>
+            <tr>
+                <td>Activity Level</td>
+                <td>{{ profile.get_activity_level_display }}</td>
+            </tr>
+            <tr>
+                <td>Fitness Goal</td>
+                <td>{{ profile.get_fitness_goal_display }}</td>
+            </tr>
+            <tr>
+                <td>Dietary Preference</td>
+                <td>{{ profile.get_dietary_preference_display }}</td>
+            </tr>
+            <tr>
+                <td>Health Focus</td>
+                <td>{{ profile.get_health_condition_display }}</td>
+            </tr>
+            <tr>
+                <td>Fasting Schedule</td>
+                <td>{{ profile.get_fasting_protocol_display }}</td>
+            </tr>
+            <tr>
+                <td>Allergies</td>
+                <td>{{ profile.allergies|default:"None specified" }}</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<div class="actions">
+    <a href="{% url 'food_tracker' %}" class="btn btn-primary">
+        Open Food Tracker &rsaquo;
+    </a>
+    <a href="{% url 'planner' %}" class="btn btn-outline">
+        Edit Profile
+    </a>
+</div>
+
+<section class="disclaimer">
+    <p>
+        <strong>Disclaimer:</strong> Calculations are general educational estimates. Consult a healthcare professional or registered dietitian for personalized clinical guidelines.
+    </p>
+</section>
+{% endblock %}

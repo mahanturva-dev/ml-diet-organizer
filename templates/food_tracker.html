@@ -1,0 +1,686 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Food Tracker — Diet Organizer{% endblock %}
+
+{% block content %}
+<!-- Header & Date Switcher -->
+<div class="page-header">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+            <h1>Daily Food Tracker</h1>
+            <p>{{ selected_date|date:"l, F j, Y" }}</p>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="window.print()">
+            Print Summary
+        </button>
+    </div>
+</div>
+
+<!-- Date Navigation -->
+<div class="date-nav">
+    <a href="{% url 'food_tracker' %}?date={{ prev_date|date:'Y-m-d' }}" class="btn btn-outline btn-sm">
+        &lsaquo; {{ prev_date|date:"M j" }}
+    </a>
+
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <form method="get" action="{% url 'food_tracker' %}" style="display: inline-flex; align-items: center;">
+            <input type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}" class="date-input-inline" onchange="this.form.submit()">
+        </form>
+        {% if is_today %}
+            <span class="date-badge">Today</span>
+        {% else %}
+            <a href="{% url 'food_tracker' %}" class="btn btn-outline btn-sm">Jump to Today</a>
+        {% endif %}
+    </div>
+
+    <a href="{% url 'food_tracker' %}?date={{ next_date|date:'Y-m-d' }}" class="btn btn-outline btn-sm">
+        {{ next_date|date:"M j" }} &rsaquo;
+    </a>
+</div>
+
+<!-- Fasting / Vrat Day Toggle Strip -->
+<div class="vrat-strip">
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <strong>Fasting / Vrat Mode:</strong>
+        <span>{% if is_vrat_mode %}Active (showing fasting-approved foods){% else %}Standard Diet{% endif %}</span>
+    </div>
+    <form method="post" action="{% url 'toggle_vrat_mode' %}" class="inline-form">
+        {% csrf_token %}
+        <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+        <button type="submit" class="btn btn-outline btn-sm">
+            {% if is_vrat_mode %}Switch to Standard Diet{% else %}Switch to Fasting (Vrat) Mode{% endif %}
+        </button>
+    </form>
+</div>
+
+<!-- Clean Daily Overview Bar -->
+<div class="overview-bar">
+    <div class="overview-item">
+        <span class="overview-label">Calories</span>
+        <div class="overview-value">{{ totals.calories }} <span class="unit">/ {{ progress.target }} kcal</span></div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">
+            {% if progress.exceeded %}+{{ progress.over_by }} over{% else %}{{ progress.remaining }} remaining{% endif %}
+        </div>
+    </div>
+
+    <div class="overview-item">
+        <span class="overview-label">Net Energy</span>
+        <div class="overview-value">{{ net_calories }} <span class="unit">kcal</span></div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">
+            -{{ total_burned }} kcal exercise
+        </div>
+    </div>
+
+    <div class="overview-item">
+        <span class="overview-label">Water</span>
+        <div class="overview-value">{{ water_log.glasses }} <span class="unit">/ {{ water_log.target_glasses }} glasses</span></div>
+        <div style="display: flex; gap: 0.4rem; margin-top: 0.25rem;">
+            <form method="post" action="{% url 'update_water_log' %}" class="inline-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add">
+                <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+                <button type="submit" class="btn btn-outline btn-sm" style="padding: 0.15rem 0.45rem;">+ Glass</button>
+            </form>
+            {% if water_log.glasses > 0 %}
+                <form method="post" action="{% url 'update_water_log' %}" class="inline-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="remove">
+                    <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+                    <button type="submit" class="btn btn-outline btn-sm" style="padding: 0.15rem 0.45rem;">-</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="overview-item">
+        <span class="overview-label">Diet Score</span>
+        <div class="overview-value" style="color: {{ health_score.color }};">
+            {{ health_score.score }}<span class="unit">/100</span>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">
+            {% if streak > 1 %}{{ streak }}-day streak{% else %}{{ health_score.label }}{% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Primary Section: Calorie & Macro Target Progress -->
+<section class="tracker-section">
+    <div class="profile-form">
+        <div class="progress-bar-wrap" style="margin-bottom: 1.25rem;">
+            <div class="progress-bar {% if progress.exceeded %}progress-exceeded{% endif %}" style="width: {{ progress.percentage }}%;"></div>
+        </div>
+
+        <div class="macro-bars">
+            <div class="macro-row">
+                <span class="macro-label">Protein</span>
+                <div class="progress-bar-wrap progress-sm">
+                    <div class="progress-bar progress-protein" style="width: {{ macro_progress.protein }}%;"></div>
+                </div>
+                <span class="macro-amount">{{ totals.protein }}g / {{ macro_targets.protein }}g</span>
+            </div>
+            <div class="macro-row">
+                <span class="macro-label">Carbs</span>
+                <div class="progress-bar-wrap progress-sm">
+                    <div class="progress-bar progress-carbs" style="width: {{ macro_progress.carbohydrates }}%;"></div>
+                </div>
+                <span class="macro-amount">{{ totals.carbohydrates }}g / {{ macro_targets.carbohydrates }}g</span>
+            </div>
+            <div class="macro-row">
+                <span class="macro-label">Fat</span>
+                <div class="progress-bar-wrap progress-sm">
+                    <div class="progress-bar progress-fat" style="width: {{ macro_progress.fat }}%;"></div>
+                </div>
+                <span class="macro-amount">{{ totals.fat }}g / {{ macro_targets.fat }}g</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Dedicated Hydration Tracker Card -->
+<section class="tracker-section">
+    <div class="profile-form" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div style="flex: 1; min-width: 240px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text); margin: 0;">Daily Water Hydration</h3>
+                <span style="font-size: 0.85rem; font-weight: 600; color: #0284c7;">
+                    {{ water_log.glasses }} / {{ water_log.target_glasses }} glasses ({{ water_log.total_ml }}ml / {{ water_log.target_ml }}ml)
+                </span>
+            </div>
+
+            <div class="progress-bar-wrap" style="background: #e0f2fe; height: 10px; margin-bottom: 0.65rem;">
+                <div class="progress-bar" style="background: #0284c7; width: {{ water_log.progress_pct }}%;"></div>
+            </div>
+
+            <div style="display: flex; gap: 0.45rem; align-items: center;">
+                {% for i in "12345678" %}
+                    <span style="font-size: 1.15rem; opacity: {% if forloop.counter <= water_log.glasses %}1{% else %}0.25{% endif %}; transition: opacity 0.2s;">
+                        💧
+                    </span>
+                {% endfor %}
+                {% if water_log.glasses > 8 %}
+                    <span class="date-badge" style="background: #e0f2fe; color: #0369a1; font-size: 0.75rem;">+{{ water_log.glasses|add:"-8" }} extra</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <form method="post" action="{% url 'update_water_log' %}" class="inline-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add">
+                <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+                <button type="submit" class="btn btn-outline btn-sm" style="border-color: #0284c7; color: #0284c7;">
+                    + 1 Glass (250ml)
+                </button>
+            </form>
+
+            {% if water_log.glasses > 0 %}
+                <form method="post" action="{% url 'update_water_log' %}" class="inline-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="remove">
+                    <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+                    <button type="submit" class="btn btn-outline btn-sm" style="color: var(--text-muted);">
+                        - 1 Glass
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Primary Section: Log Food Item -->
+<section class="tracker-section">
+    <h2>Log Food</h2>
+    <form method="post" action="{% url 'food_tracker' %}" class="profile-form">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="alert-error">
+                {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="form-grid">
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="{{ form.food_search.id_for_label }}">{{ form.food_search.label }}</label>
+                {{ form.food_search }}
+            </div>
+
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="{{ form.food.id_for_label }}">{{ form.food.label }}</label>
+                {{ form.food }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.meal_type.id_for_label }}">{{ form.meal_type.label }}</label>
+                {{ form.meal_type }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.quantity.id_for_label }}">{{ form.quantity.label }}</label>
+                {{ form.quantity }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.date.id_for_label }}">{{ form.date.label }}</label>
+                {{ form.date }}
+            </div>
+        </div>
+
+        <div class="actions" style="margin-top: 0.5rem;">
+            <button type="submit" class="btn btn-primary">Add to Log</button>
+        </div>
+    </form>
+</section>
+
+<!-- Quick Add Staples Bar -->
+<section class="tracker-section">
+    <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.5rem;">
+        Quick Add Common Items
+    </div>
+    <div class="quick-chips-wrap">
+        <form method="post" action="{% url 'quick_add_food' 32 %}" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+            <input type="hidden" name="meal_type" value="dinner">
+            <button type="submit" class="quick-chip">+ Chapati with Ghee (120 kcal)</button>
+        </form>
+        <form method="post" action="{% url 'quick_add_food' 29 %}" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+            <input type="hidden" name="meal_type" value="lunch">
+            <button type="submit" class="quick-chip">+ Chaas / Buttermilk (50 kcal)</button>
+        </form>
+        <form method="post" action="{% url 'quick_add_food' 27 %}" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+            <input type="hidden" name="meal_type" value="lunch">
+            <button type="submit" class="quick-chip">+ Green Salad (35 kcal)</button>
+        </form>
+        <form method="post" action="{% url 'quick_add_food' 38 %}" class="inline-form">
+            {% csrf_token %}
+            <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+            <input type="hidden" name="meal_type" value="snack">
+            <button type="submit" class="quick-chip">+ Roasted Makhana (105 kcal)</button>
+        </form>
+    </div>
+</section>
+
+<!-- Today's Log Entries Table -->
+<section class="tracker-section">
+    <h2>Today's Log Entries</h2>
+    {% if logs %}
+        <div class="log-table-wrap">
+            <table class="log-table">
+                <thead>
+                    <tr>
+                        <th>Food</th>
+                        <th>Meal</th>
+                        <th>Servings</th>
+                        <th>Calories</th>
+                        <th>Protein</th>
+                        <th>Carbs</th>
+                        <th>Fat</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                        <tr>
+                            <td>
+                                <strong>{{ log.food.name }}</strong>
+                                <br><small class="text-muted">{{ log.food.serving_size }}</small>
+                            </td>
+                            <td>{{ log.get_meal_type_display }}</td>
+                            <td>{{ log.quantity }}</td>
+                            <td>{{ log.total_calories }} kcal</td>
+                            <td>{{ log.total_protein }}g</td>
+                            <td>{{ log.total_carbohydrates }}g</td>
+                            <td>{{ log.total_fat }}g</td>
+                            <td>
+                                <form method="post" action="{% url 'delete_food_log' log.pk %}" class="inline-form" onsubmit="return confirm('Remove this item?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline btn-sm" style="color: var(--error); border-color: transparent;" title="Delete">&times;</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="section-note">No entries logged for this date yet.</p>
+    {% endif %}
+</section>
+
+<!-- Meals Breakdown Grid -->
+<section class="tracker-section">
+    <h2>Meal Distribution</h2>
+    <div class="meal-grid">
+        <div class="meal-card">
+            <h3>Breakfast</h3>
+            <div class="metric-value">{{ meals.breakfast }} <span class="unit">kcal</span></div>
+        </div>
+        <div class="meal-card">
+            <h3>Lunch</h3>
+            <div class="metric-value">{{ meals.lunch }} <span class="unit">kcal</span></div>
+        </div>
+        <div class="meal-card">
+            <h3>Dinner</h3>
+            <div class="metric-value">{{ meals.dinner }} <span class="unit">kcal</span></div>
+        </div>
+        <div class="meal-card">
+            <h3>Snack</h3>
+            <div class="metric-value">{{ meals.snack }} <span class="unit">kcal</span></div>
+        </div>
+    </div>
+</section>
+
+<!-- Modular Tools in Clean Accordions -->
+
+<!-- 1. AI 1-Day Meal Plan & Recommendations -->
+<details class="clean-accordion">
+    <summary>AI Meal Plan & Recommendations</summary>
+    <div style="margin-top: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem;">
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin: 0;">
+                Calculated 4-meal plan matching your <strong>{{ profile.calorie_target }} kcal</strong> target.
+            </p>
+            <form method="post" action="{% url 'apply_meal_plan' %}" class="inline-form">
+                {% csrf_token %}
+                <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+                <button type="submit" class="btn btn-primary btn-sm">Apply All 4 Meals to Log</button>
+            </form>
+        </div>
+
+        <div class="rec-grid" style="margin-bottom: 1.5rem;">
+            {% for meal_key, item in generated_plan.meals.items %}
+                <div class="rec-card">
+                    <div>
+                        <div style="font-size: 0.78rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">{{ item.slot_name }}</div>
+                        <h3>{{ item.food.name }}</h3>
+                        <div class="rec-meta">{{ item.portion }}x &bull; {{ item.food.serving_size }}</div>
+                        <div class="rec-tags">
+                            <span class="rec-tag">{{ item.calories }} kcal</span>
+                            <span class="rec-tag">{{ item.protein }}g P</span>
+                            <span class="rec-tag">{{ item.carbohydrates }}g C</span>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if recommendations %}
+            <h3 style="font-size: 0.95rem; margin-bottom: 0.75rem;">Recommended Individual Foods</h3>
+            <div class="rec-grid">
+                {% for item in recommendations %}
+                    <div class="rec-card">
+                        <div>
+                            <h3>{{ item.food.name }}</h3>
+                            <div class="rec-meta">{{ item.food.serving_size }} &bull; {{ item.match_score }}% Match</div>
+                            <div class="rec-reason">{{ item.reason }}</div>
+                            <div class="rec-tags">
+                                <span class="rec-tag">{{ item.food.calories }} kcal</span>
+                                <span class="rec-tag">{{ item.food.protein }}g P</span>
+                            </div>
+                        </div>
+                        <form method="post" action="{% url 'quick_add_food' item.food.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+                            <div style="display: flex; gap: 0.4rem; margin-top: 0.5rem;">
+                                <select name="meal_type" class="form-control" style="font-size: 0.8rem; padding: 0.25rem 0.4rem;">
+                                    <option value="breakfast">Breakfast</option>
+                                    <option value="lunch">Lunch</option>
+                                    <option value="dinner">Dinner</option>
+                                    <option value="snack" selected>Snack</option>
+                                </select>
+                                <button type="submit" class="btn btn-outline btn-sm">+ Add</button>
+                            </div>
+                        </form>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</details>
+
+<!-- 2. Workouts & Fasting -->
+<details class="clean-accordion">
+    <summary>Workouts & Fasting Timer</summary>
+    <div style="margin-top: 1.25rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem;">
+        <div>
+            <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem;">Log Physical Activity</h4>
+            <form method="post" action="{% url 'add_exercise_log' %}">
+                {% csrf_token %}
+                <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+                <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                    <div>
+                        <label style="font-size: 0.82rem; font-weight: 600;">Activity</label>
+                        {{ exercise_form.activity_name }}
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                        <div>
+                            <label style="font-size: 0.82rem; font-weight: 600;">Duration (mins)</label>
+                            {{ exercise_form.duration_mins }}
+                        </div>
+                        <div>
+                            <label style="font-size: 0.82rem; font-weight: 600;">Calories Burned</label>
+                            {{ exercise_form.calories_burned }}
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-outline btn-sm" style="margin-top: 0.25rem;">+ Log Workout</button>
+                </div>
+            </form>
+        </div>
+
+        <div>
+            <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem;">Intermittent Fasting</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                {% if active_fast %}
+                    Active Fast: <strong>{{ fast_hours_elapsed }}h elapsed</strong> (Target: {{ active_fast.target_hours }}h).
+                {% else %}
+                    Eating window is open. Ready to start your fast?
+                {% endif %}
+            </p>
+            <form method="post" action="{% url 'toggle_fasting' %}">
+                {% csrf_token %}
+                <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+                {% if active_fast %}
+                    <input type="hidden" name="action" value="stop">
+                    <button type="submit" class="btn btn-outline btn-sm">End Fast</button>
+                {% else %}
+                    <input type="hidden" name="action" value="start">
+                    <button type="submit" class="btn btn-outline btn-sm">Start Fasting Timer</button>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</details>
+
+<!-- 3. Visual Charts & Trends -->
+<details class="clean-accordion">
+    <summary>Visual Nutrition Analytics</summary>
+    <div class="chart-grid" style="margin-top: 1.25rem;">
+        <div class="chart-card">
+            <h3>Macronutrient Split</h3>
+            <div class="chart-wrapper">
+                <canvas id="macroDonutChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <h3>7-Day Intake Trend</h3>
+            <div class="chart-wrapper">
+                <canvas id="calorieTrendChart"></canvas>
+            </div>
+        </div>
+    </div>
+</details>
+
+<!-- 4. Food Comparison Tool -->
+<details class="clean-accordion">
+    <summary>Side-by-Side Food Comparison Tool</summary>
+    <div style="margin-top: 1.25rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div>
+            <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Food 1</label>
+            <select id="compareSelect1" class="form-control"></select>
+            <div id="compareDetails1" style="margin-top: 0.75rem; font-size: 0.88rem;"></div>
+        </div>
+        <div>
+            <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Food 2</label>
+            <select id="compareSelect2" class="form-control"></select>
+            <div id="compareDetails2" style="margin-top: 0.75rem; font-size: 0.88rem;"></div>
+        </div>
+    </div>
+</details>
+
+<!-- 5. Add Custom Food -->
+<details class="clean-accordion">
+    <summary>Add Custom Food / Recipe</summary>
+    <form method="post" action="{% url 'add_custom_food' %}" style="margin-top: 1rem;">
+        {% csrf_token %}
+        <input type="hidden" name="redirect_date" value="{{ selected_date|date:'Y-m-d' }}">
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ custom_food_form.name.id_for_label }}">Food Name</label>
+                {{ custom_food_form.name }}
+            </div>
+            <div class="form-group">
+                <label for="{{ custom_food_form.serving_size.id_for_label }}">Serving Size</label>
+                {{ custom_food_form.serving_size }}
+            </div>
+            <div class="form-group">
+                <label for="{{ custom_food_form.calories.id_for_label }}">Calories (kcal)</label>
+                {{ custom_food_form.calories }}
+            </div>
+            <div class="form-group">
+                <label for="{{ custom_food_form.protein.id_for_label }}">Protein (g)</label>
+                {{ custom_food_form.protein }}
+            </div>
+            <div class="form-group">
+                <label for="{{ custom_food_form.carbohydrates.id_for_label }}">Carbohydrates (g)</label>
+                {{ custom_food_form.carbohydrates }}
+            </div>
+            <div class="form-group">
+                <label for="{{ custom_food_form.fat.id_for_label }}">Fat (g)</label>
+                {{ custom_food_form.fat }}
+            </div>
+            <div class="form-group">
+                <label for="{{ custom_food_form.fiber.id_for_label }}">Fiber (g)</label>
+                {{ custom_food_form.fiber }}
+            </div>
+            <div class="form-group">
+                <label for="{{ custom_food_form.dietary_type.id_for_label }}">Dietary Type</label>
+                {{ custom_food_form.dietary_type }}
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+            {{ custom_food_form.is_vrat_friendly }}
+            <label for="{{ custom_food_form.is_vrat_friendly.id_for_label }}" style="font-size: 0.85rem; font-weight: 600;">
+                Allowed during Fasting / Vrat
+            </label>
+        </div>
+        <button type="submit" class="btn btn-outline btn-sm">Save Custom Food</button>
+    </form>
+</details>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/food_tracker.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // 1. Macronutrient Donut Chart
+    var donutCtx = document.getElementById('macroDonutChart');
+    if (donutCtx) {
+        var proteinVal = {{ totals.protein|default:0 }};
+        var carbsVal = {{ totals.carbohydrates|default:0 }};
+        var fatVal = {{ totals.fat|default:0 }};
+        var totalMacros = proteinVal + carbsVal + fatVal;
+
+        if (totalMacros === 0) {
+            proteinVal = 1;
+            carbsVal = 1;
+            fatVal = 1;
+        }
+
+        new Chart(donutCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Protein (g)', 'Carbs (g)', 'Fat (g)'],
+                datasets: [{
+                    data: [proteinVal, carbsVal, fatVal],
+                    backgroundColor: ['#2d6a4f', '#52b788', '#d97706'],
+                    borderWidth: 1,
+                    borderColor: '#ffffff',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 10, font: { size: 11 } }
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. 7-Day Calorie Intake Trend Chart
+    var trendCtx = document.getElementById('calorieTrendChart');
+    if (trendCtx) {
+        var historyData = {{ history_data_json|safe }};
+        new Chart(trendCtx, {
+            type: 'bar',
+            data: {
+                labels: historyData.labels,
+                datasets: [
+                    {
+                        label: 'Consumed (kcal)',
+                        data: historyData.calories,
+                        backgroundColor: '#2d6a4f',
+                        borderRadius: 4,
+                    },
+                    {
+                        label: 'Target (kcal)',
+                        data: historyData.targets,
+                        type: 'line',
+                        borderColor: '#c1121f',
+                        borderDash: [4, 4],
+                        fill: false,
+                        pointRadius: 2,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'kcal' }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 10, font: { size: 11 } }
+                    }
+                }
+            }
+        });
+    }
+
+    // 3. Side-by-Side Food Comparison Tool
+    var allFoods = {{ all_foods_json|safe }};
+    var sel1 = document.getElementById('compareSelect1');
+    var sel2 = document.getElementById('compareSelect2');
+    var det1 = document.getElementById('compareDetails1');
+    var det2 = document.getElementById('compareDetails2');
+
+    if (sel1 && sel2 && allFoods.length > 0) {
+        allFoods.forEach(function (f) {
+            var opt1 = document.createElement('option');
+            opt1.value = f.id;
+            opt1.textContent = (f.is_vrat_friendly ? '[Vrat] ' : '') + f.name + ' (' + f.serving_size + ')';
+            sel1.appendChild(opt1);
+
+            var opt2 = document.createElement('option');
+            opt2.value = f.id;
+            opt2.textContent = (f.is_vrat_friendly ? '[Vrat] ' : '') + f.name + ' (' + f.serving_size + ')';
+            sel2.appendChild(opt2);
+        });
+
+        sel1.selectedIndex = 0;
+        sel2.selectedIndex = Math.min(1, allFoods.length - 1);
+
+        function renderDetails(food, container) {
+            if (!food) return;
+            container.innerHTML = `
+                <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem;">
+                    <div style="font-weight: 700; color: var(--text); margin-bottom: 0.2rem;">${food.name}</div>
+                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem;">${food.serving_size}</div>
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 0.25rem 0;"><span>Calories</span><strong>${food.calories} kcal</strong></div>
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 0.25rem 0;"><span>Protein</span><strong>${food.protein} g</strong></div>
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 0.25rem 0;"><span>Carbs</span><strong>${food.carbohydrates} g</strong></div>
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 0.25rem 0;"><span>Fat</span><strong>${food.fat} g</strong></div>
+                    <div style="display: flex; justify-content: space-between; padding: 0.25rem 0;"><span>Fiber</span><strong>${food.fiber} g</strong></div>
+                </div>
+            `;
+        }
+
+        function updateComparison() {
+            var f1 = allFoods.find(function(x) { return x.id == sel1.value; });
+            var f2 = allFoods.find(function(x) { return x.id == sel2.value; });
+            renderDetails(f1, det1);
+            renderDetails(f2, det2);
+        }
+
+        sel1.addEventListener('change', updateComparison);
+        sel2.addEventListener('change', updateComparison);
+        updateComparison();
+    }
+});
+</script>
+{% endblock %}

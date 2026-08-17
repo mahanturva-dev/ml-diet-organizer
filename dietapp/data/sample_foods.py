@@ -1,0 +1,56 @@
+"""
+Sample / demo nutrition data for academic use only.
+Includes standard Indian household staples, desi superfoods, and authentic Vrat/Upvas fasting items.
+"""
+
+# Format: (name, serving_size, calories, protein, carbs, fat, fiber, dietary_type, is_vrat, is_gf, is_df, sodium, sugar)
+SAMPLE_FOODS = [
+    ('Roti (Whole Wheat)', '1 piece (30g)', 70, 2.5, 15, 0.5, 2.0, 'vegetarian', False, False, True, 5, 0.2),
+    ('Rice (Cooked)', '1 cup (150g)', 200, 4.0, 45, 0.5, 0.6, 'vegetarian', False, True, True, 2, 0.1),
+    ('Dal (Toor)', '1 cup (200g)', 180, 12, 28, 2.0, 8.0, 'vegetarian', False, True, True, 180, 1.0),
+    ('Dal (Moong)', '1 cup (200g)', 160, 14, 24, 1.5, 7.0, 'vegetarian', False, True, True, 160, 1.0),
+    ('Rajma (Kidney Beans)', '1 cup (200g)', 220, 14, 38, 1.0, 12.0, 'vegetarian', False, True, True, 210, 1.5),
+    ('Chole (Chickpeas)', '1 cup (200g)', 240, 12, 36, 4.0, 10.0, 'vegetarian', False, True, True, 240, 2.0),
+    ('Paneer', '100g', 265, 18, 4, 20, 0, 'vegetarian', True, True, False, 20, 2.0),
+    ('Curd (Dahi)', '1 cup (245g)', 150, 12, 11, 8, 0, 'vegetarian', True, True, False, 70, 8.0),
+    ('Milk (Full Fat)', '1 cup (244ml)', 150, 8, 12, 8, 0, 'vegetarian', True, True, False, 100, 12.0),
+    ('Milk (Toned)', '1 cup (244ml)', 120, 8, 12, 3, 0, 'vegetarian', True, True, False, 110, 12.0),
+    ('Oats (Cooked)', '1 cup (234g)', 150, 6, 27, 3, 4.0, 'vegetarian', False, False, True, 10, 0.5),
+    ('Banana', '1 medium (118g)', 105, 1.3, 27, 0.4, 3.1, 'vegetarian', True, True, True, 1, 14.0),
+    ('Apple', '1 medium (182g)', 95, 0.5, 25, 0.3, 4.4, 'vegetarian', True, True, True, 2, 19.0),
+    ('Potato (Boiled)', '1 medium (150g)', 130, 3.5, 30, 0.2, 2.5, 'vegetarian', True, True, True, 8, 1.2),
+    ('Soybean (Cooked)', '1 cup (172g)', 300, 28, 15, 15, 10.0, 'vegetarian', False, True, True, 5, 2.0),
+    ('Soya Chunks Curry (High Protein)', '1 cup (180g)', 210, 26, 12, 5, 6.0, 'vegetarian', False, True, True, 220, 1.5),
+    ('Sattu Drink (Desi Protein Shake)', '1 glass (250ml)', 165, 11, 24, 2.5, 6.0, 'vegetarian', False, True, True, 50, 0.5),
+    ('Poha (Flattened Rice)', '1 cup cooked (180g)', 250, 4, 52, 2, 2.0, 'vegetarian', False, True, True, 140, 1.0),
+    ('Upma', '1 cup (200g)', 220, 6, 38, 5, 3.0, 'vegetarian', False, False, True, 180, 1.0),
+    ('Idli', '2 pieces', 120, 4, 24, 0.5, 2.0, 'vegetarian', False, True, True, 110, 0.5),
+    ('Dosa (Plain)', '1 medium', 130, 4, 22, 3, 1.0, 'vegetarian', False, True, True, 130, 0.5),
+    ('Khichdi', '1 cup (250g)', 280, 10, 48, 5, 4.0, 'vegetarian', False, True, True, 190, 1.0),
+    ('Peanuts (Roasted)', '30g (handful)', 170, 8, 5, 14, 2.5, 'vegetarian', True, True, True, 5, 1.2),
+    ('Almonds', '30g (23 nuts)', 170, 6, 6, 15, 3.5, 'vegetarian', True, True, True, 1, 1.0),
+    ('Palak Paneer', '1 cup (200g)', 320, 16, 12, 24, 4.0, 'vegetarian', False, True, False, 280, 2.0),
+    ('Sprouts Salad', '1 cup (150g)', 90, 8, 12, 1, 4.0, 'vegetarian', False, True, True, 15, 1.5),
+    ('Green Salad', '1 bowl (150g)', 35, 2, 6, 0.3, 3.0, 'vegan', True, True, True, 10, 2.0),
+    ('Cucumber', '1 cup (119g)', 16, 0.7, 4, 0.1, 0.5, 'vegan', True, True, True, 2, 1.5),
+    ('Buttermilk (Chaas)', '1 glass (250ml)', 50, 4, 5, 1, 0, 'vegetarian', True, True, False, 90, 3.0),
+    ('Tofu', '100g', 76, 8, 2, 4.8, 0.5, 'vegan', False, True, True, 7, 0.5),
+    ('Egg (Boiled)', '1 large (50g)', 78, 6.3, 0.6, 5.3, 0, 'eggetarian', False, True, True, 62, 0.6),
+    ('Egg Omelette', '2 eggs', 180, 14, 2, 14, 0, 'eggetarian', False, True, True, 180, 0.8),
+    ('Egg Bhurji', '2 eggs (150g)', 220, 16, 4, 16, 0, 'eggetarian', False, True, True, 210, 1.2),
+    ('Chicken Breast (Grilled)', '100g', 165, 31, 0, 3.6, 0, 'non_vegetarian', False, True, True, 74, 0),
+    ('Fish Curry', '1 cup (200g)', 220, 24, 6, 12, 0.5, 'non_vegetarian', False, True, True, 230, 0.5),
+    ('Tandoori Chicken', '1 leg piece (120g)', 200, 28, 2, 9, 0, 'non_vegetarian', False, True, True, 240, 0.5),
+
+    # Vrat / Upvas Fasting Specialties
+    ('Sabudana Khichdi (Vrat)', '1 bowl (180g)', 280, 3.0, 52, 7.0, 1.5, 'vegetarian', True, True, True, 80, 2.0),
+    ('Roasted Makhana (Fox Nuts)', '1 bowl (30g)', 105, 3.0, 20, 0.5, 2.5, 'vegetarian', True, True, True, 10, 0.2),
+    ('Kuttu Ki Puri (Buckwheat)', '2 pieces (50g)', 210, 4.5, 28, 9.0, 3.5, 'vegetarian', True, True, True, 70, 0.5),
+    ('Samak Rice Khichdi (Vrat)', '1 bowl (200g)', 220, 4.0, 42, 4.5, 3.0, 'vegetarian', True, True, True, 90, 0.5),
+    ('Singhara Atta Halwa', '1 small bowl (100g)', 240, 2.5, 36, 10.0, 2.0, 'vegetarian', True, True, False, 30, 18.0),
+    ('Boiled Sweet Potato (Shakarkandi)', '1 medium (150g)', 130, 2.0, 30, 0.2, 4.0, 'vegan', True, True, True, 15, 6.0),
+    ('Fruit Chaat (Sendha Namak)', '1 bowl (200g)', 110, 1.5, 26, 0.5, 4.0, 'vegan', True, True, True, 20, 18.0),
+    ('Kuttu / Singhara Roti', '1 piece (40g)', 95, 3.0, 18, 1.5, 3.0, 'vegetarian', True, True, True, 30, 0.2),
+    ('Banana Walnut Lassi', '1 glass (250ml)', 210, 7.0, 32, 6.5, 2.0, 'vegetarian', True, True, False, 60, 20.0),
+    ('Paneer Sendha Namak & Jeera', '100g', 265, 18.0, 4.0, 20.0, 0, 'vegetarian', True, True, False, 25, 2.0),
+]
