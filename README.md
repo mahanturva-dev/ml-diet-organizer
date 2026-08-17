@@ -112,7 +112,7 @@ Open your browser and visit: **`http://127.0.0.1:8000/`**
 
 ## ⚠️ Academic Disclaimer
 This project is developed for educational, academic, and portfolio demonstration purposes. Caloric estimates and algorithm suggestions are based on scientific formulas (Mifflin-St Jeor, ICMR guidelines) but do not replace certified clinical dietitian or medical consultations.
-
+## it is largely scalable project the basic structure of project can be expand beyond any college projects limitations by URVAMAHANT 17/08/2026 12:08
 ---
 
 ## 📄 License
